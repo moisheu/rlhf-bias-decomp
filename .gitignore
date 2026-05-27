@@ -1,3 +1,12 @@
+# Model weights and large artifacts
+results/reward_model_baseline/
+results/**/*.bin
+results/**/*.safetensors
+results/**/*.pt
+
+# HuggingFace dataset cache
+data/cache/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
