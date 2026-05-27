@@ -21,6 +21,9 @@ def main():
 
     print(f"Loading model: {MODEL_NAME}")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    # DistilBERT has no EOS token; TRL requires one to append to sequences
+    if tokenizer.eos_token is None:
+        tokenizer.eos_token = tokenizer.sep_token
     # num_labels=1 → scalar reward head (single logit per sequence)
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=1)
 
@@ -31,6 +34,7 @@ def main():
         num_train_epochs=1,
         per_device_train_batch_size=16,
         gradient_accumulation_steps=1,
+        gradient_checkpointing=False,
         learning_rate=1e-5,
         max_length=512,
         logging_steps=50,
