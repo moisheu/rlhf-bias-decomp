@@ -1,11 +1,31 @@
-# Model weights and large artifacts
-results/reward_model_baseline/
-results/**/*.bin
-results/**/*.safetensors
-results/**/*.pt
+# Data and model artifacts (keep directories via .gitkeep, ignore contents)
+data/*
+!data/.gitkeep
+experiments/*
+!experiments/.gitkeep
+results/*
+!results/.gitkeep
+
+# Model weights and large artifacts anywhere in the repo (e.g. extracted/unzipped at root)
+reward_model_baseline/
+reward_model_baseline.zip
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.zip
 
 # HuggingFace dataset cache
 data/cache/
+*.arrow
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+.claude/settings.local.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
