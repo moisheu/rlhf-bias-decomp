@@ -99,6 +99,13 @@ def main():
     ap.add_argument("--n-prompts", type=int, default=N_PROMPTS)
     args = ap.parse_args()
 
+    # Convert to absolute paths to avoid transformers' Hub ID validation
+    args.policy_dir = os.path.abspath(args.policy_dir)
+    if args.raw_rm:
+        args.raw_rm = os.path.abspath(args.raw_rm)
+    if args.reweight_rm:
+        args.reweight_rm = os.path.abspath(args.reweight_rm)
+
     device = get_device()
     tok = AutoTokenizer.from_pretrained(args.policy_dir, local_files_only=True)
     tok.pad_token = tok.eos_token
