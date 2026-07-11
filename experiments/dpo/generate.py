@@ -100,10 +100,10 @@ def main():
     args = ap.parse_args()
 
     device = get_device()
-    tok = AutoTokenizer.from_pretrained(args.policy_dir)
+    tok = AutoTokenizer.from_pretrained(args.policy_dir, local_files_only=True)
     tok.pad_token = tok.eos_token
     tok.padding_side = "left"  # decoder-only generation
-    model = AutoModelForCausalLM.from_pretrained(args.policy_dir).eval().to(device)
+    model = AutoModelForCausalLM.from_pretrained(args.policy_dir, local_files_only=True).eval().to(device)
 
     # RM tokenizer just for the 937-filter + prompt build (use raw-rm's, else policy's is wrong;
     # fall back to a distilbert tokenizer via the raw-rm dir if provided).
@@ -143,10 +143,10 @@ def main():
     for name, rmdir in [("raw", args.raw_rm), ("reweight", args.reweight_rm)]:
         if not rmdir:
             continue
-        rtok = AutoTokenizer.from_pretrained(rmdir)
+        rtok = AutoTokenizer.from_pretrained(rmdir, local_files_only=True)
         if rtok.eos_token is None:
             rtok.eos_token = rtok.sep_token
-        rm = AutoModelForSequenceClassification.from_pretrained(rmdir).eval().to(device)
+        rm = AutoModelForSequenceClassification.from_pretrained(rmdir, local_files_only=True).eval().to(device)
         fulltexts = [r["prompt"] + r["completion"] for r in records]
         scores = rm_score(fulltexts, rtok, rm, device)
         for r, s in zip(records, scores):
