@@ -35,6 +35,13 @@ MAX_LENGTH = 512
 OUTPUT_DIR = f"results/dpo_{LABELER}_seed{SEED}"
 LABELED = f"results/phase4/dpo_labeled_{LABELER}.json"
 
+# Effective train batch fixed at 8 (matches the spec); TRAIN_BATCH sets the
+# micro-batch and gradient accumulation makes up the rest, so batch size is
+# adaptable to whatever GPU this runs on without changing training dynamics.
+EFF_BATCH = 8
+MICRO_BATCH = int(os.environ.get("TRAIN_BATCH", "4"))
+GRAD_ACCUM = max(1, EFF_BATCH // MICRO_BATCH)
+
 
 class InstabilityCallback(TrainerCallback):
     """Flag NaN/inf loss (the kill-switch signal)."""
@@ -69,8 +76,8 @@ def main():
         beta=BETA,
         num_train_epochs=1,
         max_length=MAX_LENGTH,
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=2,   # effective 8
+        per_device_train_batch_size=MICRO_BATCH,
+        gradient_accumulation_steps=GRAD_ACCUM,   # effective EFF_BATCH
         learning_rate=LR,
         lr_scheduler_type="cosine",
         warmup_ratio=0.1,
