@@ -29,6 +29,19 @@ OUT_DIR = "results/phase4"
 MAX_LENGTH = 512
 BATCH_SIZE = 16
 
+# GPT-2's EOS string. Appended to every chosen/rejected completion written out
+# here (independent of whatever RM tokenizer is used above for scoring) so the
+# downstream DPO policy has a training signal for "response is complete" --
+# TRL 1.5.0's DPOTrainer does NOT auto-append EOS, so without this the policy
+# never learns to stop generating and just fills whatever max_new_tokens is set
+# to, regardless of its value (confirmed empirically: doubling the cap 256->512
+# didn't reduce truncation at all, since every generation just filled the cap).
+POLICY_EOS = "<|endoftext|>"
+
+
+def with_eos(text: str) -> str:
+    return text if text.endswith(POLICY_EOS) else text + POLICY_EOS
+
 
 def get_device():
     if os.environ.get("FORCE_CPU") == "1":
@@ -64,8 +77,8 @@ def main():
 
     # human_chosen is, by construction, the human-preferred side.
     if args.labeler == "human":
-        labeled = [{"prompt": p["prompt"], "chosen": p["human_chosen"],
-                    "rejected": p["human_rejected"]} for p in pairs]
+        labeled = [{"prompt": p["prompt"], "chosen": with_eos(p["human_chosen"]),
+                    "rejected": with_eos(p["human_rejected"])} for p in pairs]
         rm_prefers_human = [True] * n
         print(f"[human] kept original labels for {n} pairs.")
     else:
@@ -87,11 +100,11 @@ def main():
             prefers_human = a >= b  # RM prefers the human-chosen side
             rm_prefers_human.append(prefers_human)
             if prefers_human:
-                labeled.append({"prompt": p["prompt"], "chosen": p["human_chosen"],
-                                "rejected": p["human_rejected"]})
+                labeled.append({"prompt": p["prompt"], "chosen": with_eos(p["human_chosen"]),
+                                "rejected": with_eos(p["human_rejected"])})
             else:
-                labeled.append({"prompt": p["prompt"], "chosen": p["human_rejected"],
-                                "rejected": p["human_chosen"]})
+                labeled.append({"prompt": p["prompt"], "chosen": with_eos(p["human_rejected"]),
+                                "rejected": with_eos(p["human_chosen"])})
         agree = sum(rm_prefers_human) / n
         print(f"[{args.labeler}] RM={args.model_dir}")
         print(f"  agreement with human labels: {agree*100:.2f}%  "

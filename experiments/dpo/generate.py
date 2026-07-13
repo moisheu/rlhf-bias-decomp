@@ -129,6 +129,7 @@ def main():
             do_sample=True, temperature=0.7, top_p=0.95,
             max_new_tokens=args.max_new_tokens,
             pad_token_id=tok.eos_token_id,
+            eos_token_id=tok.eos_token_id,
         )
         new_ids = gen[0][enc["input_ids"].shape[1]:].tolist()
         # strip trailing pad/eos for length
