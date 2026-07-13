@@ -81,7 +81,7 @@ gen() {
   local policy_dir=$1 label=$2
   [ -f "results/phase4/gen_${label}.json" ] && { echo "SKIP gen_${label}"; return; }
   python -u -m experiments.dpo.generate --policy-dir "$policy_dir" --label "$label" \
-    --raw-rm "$RAW_RM" --reweight-rm "$RW_RM"
+    --raw-rm "$RAW_RM" --reweight-rm "$RW_RM" --max-new-tokens 512
 }
 gen "$SFT_DIR" sft
 for arm in "raw 42" "human 42" "reweight 42" "raw 0" "human 0" "reweight 0"; do
