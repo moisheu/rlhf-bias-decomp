@@ -37,24 +37,57 @@ def mean_distinct4(rec):
     return statistics.mean(r["distinct4"] for r in rec["records"])
 
 
-def paired(raw_rec, other_rec):
-    """Paired length comparison RAW vs OTHER (aligned by prompt index)."""
-    lr = lens(raw_rec); lo = lens(other_rec)
-    n = min(len(lr), len(lo))
-    diffs = [lr[i] - lo[i] for i in range(n)]
+REP_KEEP_THRESHOLD = 0.5  # keep generations with distinct-4-gram rate >= this
+
+
+def paired(raw_rec, other_rec, rep_filter=False):
+    """Paired length comparison RAW vs OTHER (aligned by prompt index).
+
+    rep_filter=True drops any prompt where EITHER policy's generation is >50%
+    repeated 4-grams (distinct4 < 0.5) -- the spec's repetition-robustness cut,
+    to test whether a length difference survives once degeneration loops are
+    removed (the failure mode where GPT-2-124M inflates length via repetition).
+    """
+    rr = raw_rec["records"]; orr = other_rec["records"]
+    n = min(len(rr), len(orr))
+    lr, lo = [], []
+    for i in range(n):
+        if rep_filter and (rr[i]["distinct4"] < REP_KEEP_THRESHOLD
+                           or orr[i]["distinct4"] < REP_KEEP_THRESHOLD):
+            continue
+        lr.append(rr[i]["gen_len"]); lo.append(orr[i]["gen_len"])
+    kept = len(lr)
+    if kept == 0:
+        return {"n": 0, "kept": 0}
+    diffs = [lr[i] - lo[i] for i in range(kept)]
     nz = [d for d in diffs if d != 0]
     try:
         p = wilcoxon(nz).pvalue if nz else float("nan")
     except ValueError:
         p = float("nan")
-    frac_raw_longer = sum(d > 0 for d in diffs) / n
     return {
-        "n": n,
+        "n": n, "kept": kept,
         "raw_median": statistics.median(lr), "other_median": statistics.median(lo),
         "raw_mean": statistics.mean(lr), "other_mean": statistics.mean(lo),
         "mean_diff": statistics.mean(diffs), "wilcoxon_p": p,
-        "frac_raw_longer": frac_raw_longer,
+        "frac_raw_longer": sum(d > 0 for d in diffs) / kept,
     }
+
+
+def policy_diagnostics():
+    """Per-policy quality table: length, truncation, repetition."""
+    print("\n  Per-policy diagnostics:")
+    print(f"    {'policy':16} {'n':>4} {'mean_len':>9} {'med_len':>8} "
+          f"{'trunc%':>7} {'distinct4':>10}")
+    for lbl in ["sft"] + [f"{k}_seed{s}" for k in ("raw", "human", "reweight") for s in SEEDS]:
+        rec = load(lbl)
+        if not rec:
+            continue
+        ln = lens(rec)
+        trunc = rec.get("truncation_rate", 0) * 100
+        d4 = mean_distinct4(rec)
+        print(f"    {lbl:16} {len(ln):>4} {statistics.mean(ln):>9.1f} "
+              f"{statistics.median(ln):>8.0f} {trunc:>6.1f}% {d4:>10.3f}")
 
 
 def verdict(arm, per_seed, raw_recs, other_recs, sft_rec):
@@ -131,10 +164,24 @@ def report_arm(name, other_key, question):
                   f"Wilcoxon p={r['wilcoxon_p']:.4g}, RAW-longer {r['frac_raw_longer']*100:.0f}%)")
         else:
             print(f"  seed {s}: missing generations (raw={bool(raw_recs[s])}, {other_key}={bool(other_recs[s])})")
+    # Repetition-robustness cut (spec): does the effect survive dropping
+    # generations that are >50% repeated 4-grams (degeneration loops)?
+    print("  -- repetition-robust cut (drop >50%-repeated-4gram generations) --")
+    for s in SEEDS:
+        if raw_recs[s] and other_recs[s]:
+            rc = paired(raw_recs[s], other_recs[s], rep_filter=True)
+            if rc.get("kept", 0) == 0:
+                print(f"  seed {s}: no generations survive the cut")
+                continue
+            print(f"  seed {s}: kept {rc['kept']}/{rc['n']}  "
+                  f"RAW median {rc['raw_median']:.0f} vs {other_key} {rc['other_median']:.0f}  "
+                  f"(mean diff {rc['mean_diff']:+.1f} tok, Wilcoxon p={rc['wilcoxon_p']:.4g}, "
+                  f"RAW-longer {rc['frac_raw_longer']*100:.0f}%)")
+
     if len([s for s in SEEDS if s in per_seed]) == len(SEEDS):
         v = verdict(name, per_seed, {s: raw_recs[s] for s in SEEDS if raw_recs[s]},
                     {s: other_recs[s] for s in SEEDS if other_recs[s]}, sft_rec)
-        print(f"\n  VERDICT (Arm {name}): {v}")
+        print(f"\n  VERDICT (Arm {name}, pre-registered): {v}")
     else:
         print(f"\n  VERDICT (Arm {name}): PENDING (need both seeds)")
 
@@ -144,6 +191,7 @@ def main():
     sft = load("sft")
     if sft:
         print(f"SFT baseline mean gen_len: {statistics.mean(lens(sft)):.1f}")
+    policy_diagnostics()
     report_arm("A", "human",
                "Does RM-level length bias per se transfer to policy behavior (vs human labels)?")
     report_arm("B", "reweight",
