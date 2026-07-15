@@ -1,0 +1,44 @@
+[
+  {
+    "label": "harmless_seed42",
+    "model_dir": "results/reward_model_baseline",
+    "n_eval": 937,
+    "n_dropped_over_maxlen": 63,
+    "accuracy": 0.48452508004268946,
+    "margin": -0.04162755118545817,
+    "r_pooled": -0.4685213250114669,
+    "r_chosen": -0.486544466486956,
+    "r_rejected": -0.44875669723952216,
+    "r_pooled_seqlen": -0.40097798469272755,
+    "mean_reward": -0.16333567499696985,
+    "std_reward": 1.0870726533283843
+  },
+  {
+    "label": "harmless_seed0",
+    "model_dir": "results/reward_model_baseline_seed0",
+    "n_eval": 937,
+    "n_dropped_over_maxlen": 63,
+    "accuracy": 0.47491995731056563,
+    "margin": -0.03267553550854182,
+    "r_pooled": -0.4152774588589999,
+    "r_chosen": -0.4248087768301035,
+    "r_rejected": -0.4045264261684772,
+    "r_pooled_seqlen": -0.38699414608145466,
+    "mean_reward": -0.2657802467360663,
+    "std_reward": 0.9591292700022765
+  },
+  {
+    "label": "harmless_seed1",
+    "model_dir": "results/reward_model_baseline_seed1",
+    "n_eval": 937,
+    "n_dropped_over_maxlen": 63,
+    "accuracy": 0.4759871931696905,
+    "margin": 0.015223839031005618,
+    "r_pooled": -0.33203861625015896,
+    "r_chosen": -0.3390174137790363,
+    "r_rejected": -0.32688348875450324,
+    "r_pooled_seqlen": -0.4281235873426626,
+    "mean_reward": -1.0284810794493544,
+    "std_reward": 0.536188150373372
+  }
+]
