@@ -1,0 +1,15 @@
+label                   doc r    new r    delta  flag
+symloss_seed42          0.250    0.389   +0.139  *** REAL MISMATCH ***
+symloss_seed0           0.422    0.408   -0.014  OK (fp/RNG drift)
+symloss_seed1           0.545    0.633   +0.088  *** REAL MISMATCH ***
+reweight_seed42         0.304    0.266   -0.038  moderate, below 0.05 line
+reweight_seed0          0.289    0.283   -0.006  OK (fp/RNG drift)
+reweight_seed1          0.331    0.317   -0.014  OK (fp/RNG drift)
+combined_seed42         0.247    0.208   -0.039  moderate, below 0.05 line
+combined_seed0          0.257    0.418   +0.161  *** REAL MISMATCH ***
+combined_seed1          0.494    0.345   -0.149  *** REAL MISMATCH ***
+
+method mean          doc mean new mean    delta  flag
+symloss                 0.406    0.477   +0.071  *** REAL MISMATCH ***
+reweight                0.308    0.289   -0.019  OK (fp/RNG drift)
+combined                0.333    0.324   -0.009  OK (fp/RNG drift)
