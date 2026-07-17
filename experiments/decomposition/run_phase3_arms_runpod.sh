@@ -32,6 +32,11 @@ REPO_URL="https://${GITHUB_TOKEN}@github.com/moisheu/rlhf-bias-decomp.git"
 VENV="$HOME/.venvs/rlhf-bias"
 
 echo "===== [1/9] Clone / update repo ====="
+# Fresh containers have no git identity configured -- commit at [9/9] would
+# die on this hours in otherwise. Only sets a fallback, never overrides an
+# identity that's already configured (e.g. a persisted home dir).
+git config --global user.email >/dev/null 2>&1 || git config --global user.email "69376656+moisheu@users.noreply.github.com"
+git config --global user.name  >/dev/null 2>&1 || git config --global user.name  "Moisheu"
 mkdir -p "$(dirname "$REPO_DIR")"
 if [ -d "$REPO_DIR/.git" ]; then
   cd "$REPO_DIR"
