@@ -35,6 +35,9 @@ echo "===== [1/9] Clone / update repo ====="
 mkdir -p "$(dirname "$REPO_DIR")"
 if [ -d "$REPO_DIR/.git" ]; then
   cd "$REPO_DIR"
+  # Re-inject the token: a prior run may have scrubbed it (see end of script),
+  # and private-repo fetch/pull needs it every time, not just on first clone.
+  git remote set-url origin "$REPO_URL"
   git fetch origin "$BRANCH"
   git checkout "$BRANCH"
   git pull origin "$BRANCH"
@@ -42,7 +45,6 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$REPO_DIR"
   cd "$REPO_DIR"
 fi
-git remote set-url origin "https://github.com/moisheu/rlhf-bias-decomp.git"  # scrub token from stored remote
 echo "On branch: $(git branch --show-current)   Latest commit: $(git log --oneline -1)"
 
 echo "===== [2/9] Environment setup ====="
@@ -195,6 +197,10 @@ else
   echo "Nothing new to commit (already up to date) -- treating as pushed."
   PUSH_OK=1
 fi
+
+# Scrub the token from the stored remote now that all git network ops for
+# this run are done (re-injected at the top of [1/9] on the next invocation).
+git remote set-url origin "https://github.com/moisheu/rlhf-bias-decomp.git"
 
 echo "===== DONE. Reconciliation report: results/phase3_arms_reconciliation.txt ====="
 
