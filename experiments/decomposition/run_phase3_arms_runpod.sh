@@ -61,9 +61,17 @@ print('torch', torch.__version__, '| cuda:', ok, '|', torch.cuda.get_device_name
 sys.exit(0 if ok else 1)
 "
 
-echo "===== [3/9] HuggingFace auth (non-interactive via HF_TOKEN) ====="
-huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential > /dev/null
-echo "HF auth OK."
+echo "===== [3/9] HuggingFace auth (via HF_TOKEN env var, library-level check) ====="
+# Not shelling out to huggingface-cli/hf -- that CLI's name/flags have already
+# churned once (cli -> hf) and datasets/transformers read HF_TOKEN from the
+# environment directly regardless, so a library-level whoami() is both the
+# real validation and immune to future CLI renames.
+python3 -c "
+import os
+from huggingface_hub import whoami
+info = whoami(token=os.environ['HF_TOKEN'])
+print('HF auth OK, token valid for:', info.get('name', info))
+"
 
 echo "===== [4/9] Sanity check: 100-row hh-rlhf mixed pool load ====="
 python3 -c "
